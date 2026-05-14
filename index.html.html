@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BugWatch 企画書</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080c08;
+    --green: #39ff14;
+    --green-dim: #1a7a09;
+    --green-mid: #22c55e;
+    --amber: #f59e0b;
+    --red: #ff3d3d;
+    --white: #f0f7f0;
+    --gray: #2a3a2a;
+    --text: #c8dcc8;
+    --muted: #5a7a5a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── SCAN LINE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 60px 40px;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(57,255,20,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 20% 80%, rgba(57,255,20,0.03) 0%, transparent 60%);
+  }
+
+  /* ── LOGO ── */
+  .logo-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 48px;
+    animation: fadeUp 1s ease both;
+  }
+
+  .logo-icon {
+    width: 160px;
+    height: 160px;
+    position: relative;
+    margin-bottom: 16px;
+  }
+
+  /* Radar rings */
+  .radar-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid var(--green-dim);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: radarPulse 3s ease-in-out infinite;
+  }
+  .radar-ring:nth-child(1) { width: 160px; height: 160px; animation-delay: 0s; }
+  .radar-ring:nth-child(2) { width: 116px; height: 116px; animation-delay: 0.4s; }
+  .radar-ring:nth-child(3) { width: 72px; height: 72px; animation-delay: 0.8s; border-color: var(--green-mid); }
+
+  @keyframes radarPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* Radar sweep */
+  .radar-sweep {
+    position: absolute;
+    width: 80px; height: 80px;
+    top: 50%; left: 50%;
+    transform-origin: 0 0;
+    animation: sweep 4s linear infinite;
+  }
+  .radar-sweep::before {
+    content: '';
+    position: absolute;
+    width: 80px; height: 2px;
+    background: linear-gradient(90deg, var(--green), transparent);
+    top: 0; left: 0;
+    transform-origin: left center;
+  }
+
+  @keyframes sweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Bug SVG center */
+  .bug-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+
+  /* Crosshair lines */
+  .crosshair-h, .crosshair-v {
+    position: absolute;
+    background: var(--green-dim);
+    top: 50%; left: 50%;
+    opacity: 0.4;
+  }
+  .crosshair-h { width: 160px; height: 1px; transform: translate(-50%, -50%); }
+  .crosshair-v { width: 1px; height: 160px; transform: translate(-50%, -50%); }
+
+  /* Blip dots */
+  .blip {
+    position: absolute;
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--green);
+    animation: blip 2s ease-in-out infinite;
+  }
+  .blip:nth-child(7)  { top: 22%; left: 68%; animation-delay: 0.3s; }
+  .blip:nth-child(8)  { top: 65%; left: 30%; animation-delay: 1.1s; }
+  .blip:nth-child(9)  { top: 40%; left: 78%; animation-delay: 0.7s; width:4px; height:4px; }
+  .blip:nth-child(10) { top: 75%; left: 60%; animation-delay: 1.6s; width:4px; height:4px; }
+
+  @keyframes blip {
+    0%, 100% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  .logo-wordmark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    letter-spacing: 0.12em;
+    color: var(--green);
+    text-shadow: 0 0 30px rgba(57,255,20,0.4), 0 0 60px rgba(57,255,20,0.1);
+    line-height: 1;
+  }
+
+  .logo-tagline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .cover-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+    animation: fadeUp 1s ease 0.3s both;
+  }
+
+  .cover-title {
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 900;
+    color: var(--white);
+    text-align: center;
+    line-height: 1.3;
+    margin: 12px 0 24px;
+    animation: fadeUp 1s ease 0.5s both;
+  }
+
+  .cover-title span { color: var(--green); }
+
+  .cover-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    animation: fadeUp 1s ease 0.7s both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 80px 40px;
+    border-top: 1px solid #0f1e0f;
+  }
+
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 20px; height: 1px;
+    background: var(--green);
+    display: inline-block;
+  }
+
+  .section-title {
+    font-size: clamp(24px, 4vw, 36px);
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.3;
+    margin-bottom: 32px;
+  }
+
+  .section-title span { color: var(--green); }
+
+  /* ── STAT BLOCKS ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2px;
+    margin: 40px 0;
+    background: #0a180a;
+    border: 1px solid #0f1e0f;
+  }
+
+  .stat-block {
+    background: var(--black);
+    padding: 32px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--green-dim);
+  }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    color: var(--green);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(57,255,20,0.3);
+  }
+
+  .stat-unit {
+    font-size: 14px;
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  .stat-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* ── CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 32px 0;
+  }
+
+  .card {
+    background: #0a180a;
+    border: 1px solid #0f2a0f;
+    border-radius: 4px;
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: var(--green-dim); }
+
+  .card-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+
+  .card-body {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .card-tag {
+    display: inline-block;
+    background: #0f2a0f;
+    border: 1px solid var(--green-dim);
+    border-radius: 2px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--green-mid);
+    letter-spacing: 0.1em;
+    margin-top: 12px;
+  }
+
+  /* ── FLOW ── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 32px 0;
+  }
+
+  .flow-item {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 24px 0;
+    border-bottom: 1px solid #0a180a;
+    position: relative;
+  }
+
+  .flow-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: #0f2a0f;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 48px;
+    text-align: center;
+    transition: color 0.3s;
+  }
+
+  .flow-item:hover .flow-num { color: var(--green-dim); }
+
+  .flow-content {}
+  .flow-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 0.2em;
+    margin-bottom: 4px;
+  }
+  .flow-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+  .flow-body {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ── ROADMAP ── */
+  .roadmap {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2px;
+    margin: 32px 0;
+    background: #0a180a;
+  }
+
+  .roadmap-phase {
+    background: var(--black);
+    padding: 28px 20px;
+    position: relative;
+  }
+
+  .phase-period {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 0.2em;
+    margin-bottom: 10px;
+  }
+
+  .phase-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+
+  .phase-items {
+    list-style: none;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 2;
+  }
+
+  .phase-items li::before {
+    content: '▸ ';
+    color: var(--green-dim);
+  }
+
+  .phase-goal {
+    margin-top: 16px;
+    padding: 8px 12px;
+    background: #0a180a;
+    border-left: 2px solid var(--green-dim);
+    font-size: 11px;
+    color: var(--green-mid);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  /* ── EXIT TABLE ── */
+  .exit-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-size: 13px;
+  }
+
+  .exit-table th {
+    background: #0a180a;
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid #0f2a0f;
+    font-weight: 400;
+  }
+
+  .exit-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #0a180a;
+    color: var(--text);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  .exit-table tr:hover td { background: #0a180a; }
+
+  .exit-table .highlight {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  /* ── TRIPLE MEANING ── */
+  .triple {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: #0a180a;
+    margin: 40px 0;
+  }
+
+  .triple-item {
+    background: var(--black);
+    padding: 40px 24px;
+    text-align: center;
+  }
+
+  .triple-word {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(57,255,20,0.3);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .triple-en {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--green-mid);
+    letter-spacing: 0.2em;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .triple-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  /* ── PRIVACY BOX ── */
+  .privacy-box {
+    background: #070f07;
+    border: 1px solid #0f2a0f;
+    padding: 32px;
+    margin: 32px 0;
+    position: relative;
+  }
+
+  .privacy-box::before {
+    content: 'PRIVACY PROTECTED';
+    position: absolute;
+    top: -1px; right: 24px;
+    background: var(--green-dim);
+    color: var(--black);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 3px 10px;
+    letter-spacing: 0.15em;
+  }
+
+  .privacy-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    list-style: none;
+  }
+
+  .privacy-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .privacy-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .privacy-text {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .privacy-text strong {
+    color: var(--text);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    border-top: 1px solid #0f1e0f;
+    padding: 40px;
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--green);
+    letter-spacing: 0.15em;
+    opacity: 0.5;
+  }
+
+  .footer-note {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: #1a3a1a;
+    letter-spacing: 0.2em;
+    margin-top: 8px;
+  }
+
+  /* ── HIGHLIGHT BAND ── */
+  .band {
+    background: #0a180a;
+    border-top: 1px solid #0f2a0f;
+    border-bottom: 1px solid #0f2a0f;
+    padding: 40px;
+    margin: 40px 0;
+    text-align: center;
+  }
+
+  .band-text {
+    font-size: clamp(18px, 3vw, 26px);
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.5;
+  }
+
+  .band-text span { color: var(--green); }
+
+  /* Divider */
+  hr.fancy {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+    margin: 0;
+    opacity: 0.4;
+  }
+
+  @media (max-width: 600px) {
+    .section { padding: 60px 20px; }
+    .triple { grid-template-columns: 1fr; }
+    .logo-wordmark { font-size: 52px; }
+    .cover { padding: 40px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ COVER ══ -->
+<section class="cover">
+
+  <div class="logo-wrap">
+    <!-- LOGO ICON -->
+    <div class="logo-icon">
+      <div class="crosshair-h"></div>
+      <div class="crosshair-v"></div>
+      <div class="radar-ring"></div>
+      <div class="radar-ring"></div>
+      <div class="radar-ring"></div>
+      <div class="radar-sweep"></div>
+
+      <!-- Bug SVG -->
+      <div class="bug-center">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+          <!-- Body -->
+          <ellipse cx="26" cy="28" rx="9" ry="13" fill="#080c08" stroke="#39ff14" stroke-width="1.5"/>
+          <!-- Head -->
+          <circle cx="26" cy="14" r="7" fill="#080c08" stroke="#39ff14" stroke-width="1.5"/>
+          <!-- Eyes -->
+          <circle cx="23" cy="13" r="2" fill="#39ff14" opacity="0.9"/>
+          <circle cx="29" cy="13" r="2" fill="#39ff14" opacity="0.9"/>
+          <circle cx="23.8" cy="12.5" r="0.7" fill="#080c08"/>
+          <circle cx="29.8" cy="12.5" r="0.7" fill="#080c08"/>
+          <!-- Antennae -->
+          <line x1="23" y1="8" x2="18" y2="2" stroke="#39ff14" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="29" y1="8" x2="34" y2="2" stroke="#39ff14" stroke-width="1.2" stroke-linecap="round"/>
+          <circle cx="18" cy="2" r="1.5" fill="#39ff14"/>
+          <circle cx="34" cy="2" r="1.5" fill="#39ff14"/>
+          <!-- Wings left -->
+          <path d="M17 22 Q8 16 10 28 Q12 36 17 32" fill="rgba(57,255,20,0.08)" stroke="#39ff14" stroke-width="1" opacity="0.7"/>
+          <path d="M17 30 Q6 28 9 38 Q12 44 18 40" fill="rgba(57,255,20,0.05)" stroke="#39ff14" stroke-width="0.8" opacity="0.5"/>
+          <!-- Wings right -->
+          <path d="M35 22 Q44 16 42 28 Q40 36 35 32" fill="rgba(57,255,20,0.08)" stroke="#39ff14" stroke-width="1" opacity="0.7"/>
+          <path d="M35 30 Q46 28 43 38 Q40 44 34 40" fill="rgba(57,255,20,0.05)" stroke="#39ff14" stroke-width="0.8" opacity="0.5"/>
+          <!-- Legs -->
+          <line x1="18" y1="26" x2="10" y2="22" stroke="#39ff14" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="18" y1="30" x2="9" y2="30" stroke="#39ff14" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="18" y1="34" x2="10" y2="38" stroke="#39ff14" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="34" y1="26" x2="42" y2="22" stroke="#39ff14" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="34" y1="30" x2="43" y2="30" stroke="#39ff14" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <line x1="34" y1="34" x2="42" y2="38" stroke="#39ff14" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+          <!-- Body segments -->
+          <line x1="17" y1="24" x2="35" y2="24" stroke="#39ff14" stroke-width="0.5" opacity="0.3"/>
+          <line x1="17" y1="28" x2="35" y2="28" stroke="#39ff14" stroke-width="0.5" opacity="0.3"/>
+          <line x1="17" y1="32" x2="35" y2="32" stroke="#39ff14" stroke-width="0.5" opacity="0.3"/>
+          <!-- Scan line effect on bug -->
+          <rect x="17" y="13" width="18" height="28" fill="url(#scanBug)" opacity="0.15"/>
+          <defs>
+            <pattern id="scanBug" patternUnits="userSpaceOnUse" width="2" height="4">
+              <rect width="2" height="2" fill="#39ff14"/>
+            </pattern>
+          </defs>
+        </svg>
+      </div>
+
+      <!-- Blip dots -->
+      <div class="blip"></div>
+      <div class="blip"></div>
+      <div class="blip"></div>
+      <div class="blip"></div>
+    </div>
+
+    <div class="logo-wordmark">BugWatch</div>
+    <div class="logo-tagline">Japan Insect Monitor — v1.0</div>
+  </div>
+
+  <div class="cover-subtitle">Project Proposal · 2026</div>
+  <h1 class="cover-title">
+    生態系の<span>バグ</span>を、<br>みんなで発見する。
+  </h1>
+  <div class="cover-meta">Confidential · For Discussion Only</div>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ 01 BACKGROUND ══ -->
+<section class="section">
+  <div class="section-label">01 · Background</div>
+  <h2 class="section-title">虫が、<span>消えている。</span></h2>
+
+  <p style="font-size:15px; color:var(--text); line-height:1.9; max-width:680px; margin-bottom:40px;">
+    かつてドライブから帰ると、フロントガラスには無数の虫の痕跡があった。<br>
+    今は何もない。この現象に気づいているドライバーは多い。<br>
+    しかしデータがない。日本では、誰も記録していない。
+  </p>
+
+  <div class="stat-grid">
+    <div class="stat-block">
+      <div class="stat-num">75<span class="stat-unit">%</span></div>
+      <div class="stat-desc">ドイツの自然保護区内でさえ、27年間で昆虫バイオマスが75%以上減少（2017年・科学誌Nature掲載）</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-num">63<span class="stat-unit">%</span></div>
+      <div class="stat-desc">英国のBugs Matter調査で、2021〜2024年にフロントガラスへの衝突数が63%減少</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-num">0<span class="stat-unit">件</span></div>
+      <div class="stat-desc">日本国内に同種の市民科学データは存在しない。空白地帯。</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-num">40<span class="stat-unit">%</span></div>
+      <div class="stat-desc">農業生産の約40%は昆虫の授粉に依存。昆虫減少は食料安保の問題でもある。</div>
+    </div>
+  </div>
+
+  <div class="band" style="margin:0;">
+    <div class="band-text">
+      昆虫が減っているという<span>感覚</span>はある。<br>
+      でも日本の<span>データ</span>がない。<br>
+      だから誰も動けない。
+    </div>
+  </div>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ 02 CONCEPT ══ -->
+<section class="section">
+  <div class="section-label">02 · Concept</div>
+  <h2 class="section-title"><span>BugWatch</span>とは何か</h2>
+
+  <!-- Triple meaning -->
+  <div class="triple">
+    <div class="triple-item">
+      <span class="triple-word">BUG</span>
+      <span class="triple-en">= INSECT</span>
+      <p class="triple-desc">甲虫・蛾・蚊など<br>あらゆる昆虫を記録する<br>市民科学プラットフォーム</p>
+    </div>
+    <div class="triple-item">
+      <span class="triple-word">BUG</span>
+      <span class="triple-en">= ANOMALY</span>
+      <p class="triple-desc">生態系に起きている<br>「バグ（異常）」を<br>可視化するツール</p>
+    </div>
+    <div class="triple-item">
+      <span class="triple-word">WATCH</span>
+      <span class="triple-en">= DISCOVER</span>
+      <p class="triple-desc">妖怪ウォッチのように<br>虫を探し・発見し・<br>コレクションする喜び</p>
+    </div>
+  </div>
+
+  <p style="font-size:14px; color:var(--muted); line-height:1.9; max-width:680px; margin-top:32px;">
+    子どもの頃、虫を追いかけた記憶は誰にでもある。<br>
+    BugWatchはその童心を刺激しながら、<br>
+    同時に深刻な環境問題の解決に貢献するデータを集める。<br>
+    <strong style="color:var(--text)">「遊んでいたら、科学に貢献していた」</strong>という設計。
+  </p>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ 03 SOLUTION ══ -->
+<section class="section">
+  <div class="section-label">03 · Solution</div>
+  <h2 class="section-title">3つの<span>記録方法</span></h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="card-icon">🚗</span>
+      <div class="card-title">フロントガラス記録</div>
+      <div class="card-body">ドライブ後のフロントガラスをAIが自動カウント。GPSで走行ルートを記録し、「どの道で虫が多いか」を地図化する。</div>
+      <span class="card-tag">地方ユーザー向け</span>
+    </div>
+    <div class="card">
+      <span class="card-icon">💡</span>
+      <div class="card-title">夜間UVライトトラップ</div>
+      <div class="card-body">UVランプに集まる虫を撮影・記録。都市部のベランダや庭でも使える。「LEDに変わって虫が来なくなった」現象を可視化。</div>
+      <span class="card-tag">都市ユーザー向け</span>
+    </div>
+    <div class="card">
+      <span class="card-icon">🌾</span>
+      <div class="card-title">自然環境フィールド記録</div>
+      <div class="card-body">河川・田んぼ・里山での目撃・撮影記録。農家や昆虫好きが既にやっていることをデータに変換する。</div>
+      <span class="card-tag">農家・昆虫好き向け</span>
+    </div>
+  </div>
+
+  <div class="privacy-box">
+    <ul class="privacy-items">
+      <li class="privacy-item">
+        <span class="privacy-icon">✂️</span>
+        <div class="privacy-text">
+          <strong>端点カット方式</strong>
+          ルート始点・終点から最大2kmを自動削除。自宅・目的地は記録しない。
+        </div>
+      </li>
+      <li class="privacy-item">
+        <span class="privacy-icon">📍</span>
+        <div class="privacy-text">
+          <strong>グリッド丸め処理</strong>
+          GPS座標を500m単位に丸めてから送信。個人特定を原理的に防ぐ。
+        </div>
+      </li>
+      <li class="privacy-item">
+        <span class="privacy-icon">🛣️</span>
+        <div class="privacy-text">
+          <strong>道路種別のみ記録</strong>
+          高速・国道・農道など環境タイプを記録。詳細住所は一切保存しない。
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ 04 VIRAL ══ -->
+<section class="section">
+  <div class="section-label">04 · Growth</div>
+  <h2 class="section-title">自走する<span>バイラル設計</span></h2>
+
+  <div class="flow">
+    <div class="flow-item">
+      <div class="flow-num">01</div>
+      <div class="flow-content">
+        <div class="flow-label">Trigger</div>
+        <div class="flow-title">珍しい虫を発見</div>
+        <div class="flow-body">AIが虫の種類を特定し、希少度を4段階で評価。「石川県で今年初記録」などのアラートが表示される。</div>
+      </div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-num">02</div>
+      <div class="flow-content">
+        <div class="flow-label">Reward</div>
+        <div class="flow-title">レアカードが自動生成</div>
+        <div class="flow-body">発見した虫のビジュアルカードが即時生成。種名・希少度・発見場所・日付が記載された「証明書」として機能。</div>
+      </div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-num">03</div>
+      <div class="flow-content">
+        <div class="flow-label">Share</div>
+        <div class="flow-title">SNSに投稿したくなる</div>
+        <div class="flow-body">「#BugWatch #石川」でインスタ・Xに投稿。虫の写真＋レアカードは視覚的に映える。見た人がアプリをDL。</div>
+      </div>
+    </div>
+    <div class="flow-item">
+      <div class="flow-num">04</div>
+      <div class="flow-content">
+        <div class="flow-label">Loop</div>
+        <div class="flow-title">データが蓄積される</div>
+        <div class="flow-body">投稿→新規ユーザー→記録→投稿のサイクルが回る。運営者が動かなくてもデータが増え続ける設計。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ 05 ROADMAP ══ -->
+<section class="section">
+  <div class="section-label">05 · Roadmap</div>
+  <h2 class="section-title">逆算した<span>ロードマップ</span></h2>
+
+  <div class="roadmap">
+    <div class="roadmap-phase">
+      <div class="phase-period">Phase 01 · 〜3ヶ月</div>
+      <div class="phase-title">石川モデル構築</div>
+      <ul class="phase-items">
+        <li>JCネットワークへ展開</li>
+        <li>能登エリアで初期データ収集</li>
+        <li>SNSアカウント開設</li>
+        <li>金沢大学へ共同研究打診</li>
+      </ul>
+      <div class="phase-goal">目標：100件</div>
+    </div>
+    <div class="roadmap-phase">
+      <div class="phase-period">Phase 02 · 〜6ヶ月</div>
+      <div class="phase-title">メディア戦略</div>
+      <ul class="phase-items">
+        <li>PRTIMESプレスリリース</li>
+        <li>北國新聞・NHK石川</li>
+        <li>研究者との共同論文着手</li>
+        <li>カーディーラー連携</li>
+      </ul>
+      <div class="phase-goal">目標：1,000件</div>
+    </div>
+    <div class="roadmap-phase">
+      <div class="phase-period">Phase 03 · 〜1年</div>
+      <div class="phase-title">全国展開</div>
+      <ul class="phase-items">
+        <li>JC全国大会で発表</li>
+        <li>農協・JA連携</li>
+        <li>全国47都道府県カバー</li>
+        <li>データ価値の証明</li>
+      </ul>
+      <div class="phase-goal">目標：5,000件</div>
+    </div>
+    <div class="roadmap-phase">
+      <div class="phase-period">Phase 04 · 〜2年</div>
+      <div class="phase-title">Exit</div>
+      <ul class="phase-items">
+        <li>農薬・保険会社へデータ販売</li>
+        <li>環境省委託事業化</li>
+        <li>アプリ・データ資産の売却</li>
+        <li>NPO・研究機関への譲渡</li>
+      </ul>
+      <div class="phase-goal">目標：売却 or 継続収益化</div>
+    </div>
+  </div>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ 06 REVENUE ══ -->
+<section class="section">
+  <div class="section-label">06 · Revenue Model</div>
+  <h2 class="section-title">3層の<span>収益構造</span></h2>
+
+  <p style="font-size:14px; color:var(--muted); line-height:1.9; max-width:680px; margin-bottom:40px;">
+    アプリは無料で広める。収益は「ハード販売」「アフィリエイト」「データ」の3層で積み上げる。<br>
+    最初はリスクゼロのアフィリエイトから始め、資金ができたら自社ブランド化する。
+  </p>
+
+  <!-- Revenue layers -->
+  <div style="display:flex; flex-direction:column; gap:2px; background:#0a180a; margin-bottom:40px;">
+
+    <!-- Layer 1 -->
+    <div style="background:var(--black); padding:28px 28px; display:grid; grid-template-columns:120px 1fr auto; gap:24px; align-items:center;">
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--green); letter-spacing:0.2em; margin-bottom:6px;">LAYER 01</div>
+        <div style="font-size:14px; font-weight:700; color:var(--white);">UVライト<br>アフィリエイト</div>
+      </div>
+      <div>
+        <div style="font-size:13px; color:var(--muted); line-height:1.8;">
+          アプリ内で「おすすめUVランプ」としてAmazon商品を紹介。<br>
+          ユーザーが購入するたびに紹介料（販売価格の3〜8%）が入る。<br>
+          <span style="color:var(--text)">在庫不要・リスクゼロ・即日開始可能。</span>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span style="background:#0a180a; border:1px solid #0f2a0f; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--green-mid);">手間ゼロ</span>
+          <span style="background:#0a180a; border:1px solid #0f2a0f; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--green-mid);">即日開始</span>
+          <span style="background:#0a180a; border:1px solid #0f2a0f; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--green-mid);">Phase 01〜</span>
+        </div>
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--green-mid); line-height:1;">3-8<span style="font-size:16px;">%</span></div>
+        <div style="font-size:10px; color:var(--muted);">紹介料</div>
+      </div>
+    </div>
+
+    <!-- Layer 2 -->
+    <div style="background:var(--black); padding:28px 28px; display:grid; grid-template-columns:120px 1fr auto; gap:24px; align-items:center; border-left:3px solid var(--amber);">
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--amber); letter-spacing:0.2em; margin-bottom:6px;">LAYER 02</div>
+        <div style="font-size:14px; font-weight:700; color:var(--white);">BugWatch<br>ブランドライト</div>
+      </div>
+      <div>
+        <div style="font-size:13px; color:var(--muted); line-height:1.8;">
+          アフィリエイト収益で仕入れ資金を確保後、OEM製造で自社ブランド化。<br>
+          「BugWatch公式UVライト」としてアプリ連動・QR付き同梱で差別化。<br>
+          <span style="color:var(--text)">セット販売でデータ収集の質も向上する。</span>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span style="background:#1a1000; border:1px solid #2a1a00; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--amber);">OEM製造</span>
+          <span style="background:#1a1000; border:1px solid #2a1a00; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--amber);">売却価値↑</span>
+          <span style="background:#1a1000; border:1px solid #2a1a00; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--amber);">Phase 02〜</span>
+        </div>
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--amber); line-height:1;">3-5<span style="font-size:16px;">千円</span></div>
+        <div style="font-size:10px; color:var(--muted);">想定単価</div>
+      </div>
+    </div>
+
+    <!-- Layer 3 -->
+    <div style="background:var(--black); padding:28px 28px; display:grid; grid-template-columns:120px 1fr auto; gap:24px; align-items:center; border-left:3px solid var(--green);">
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace; font-size:9px; color:var(--green); letter-spacing:0.2em; margin-bottom:6px;">LAYER 03</div>
+        <div style="font-size:14px; font-weight:700; color:var(--white);">データ販売<br>／売却</div>
+      </div>
+      <div>
+        <div style="font-size:13px; color:var(--muted); line-height:1.8;">
+          蓄積した昆虫分布データを農薬メーカー・保険会社・環境省等に販売。<br>
+          またはアプリ・データ資産ごと環境系企業・研究機関に売却。<br>
+          <span style="color:var(--text)">これが本命の出口。ハード・ソフト両方あると売却価値が大幅に上がる。</span>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span style="background:#0a180a; border:1px solid #0f2a0f; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--green-mid);">本命出口</span>
+          <span style="background:#0a180a; border:1px solid #0f2a0f; border-radius:2px; padding:3px 10px; font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--green-mid);">Phase 03〜</span>
+        </div>
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--green); line-height:1; text-shadow:0 0 20px rgba(57,255,20,0.3);">数千<span style="font-size:16px;">万円</span></div>
+        <div style="font-size:10px; color:var(--muted);">売却時想定</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UV light context -->
+  <div style="background:#070f07; border:1px solid #0f2a0f; padding:28px; position:relative;">
+    <div style="position:absolute; top:-1px; left:24px; background:var(--green-dim); color:var(--black); font-family:'Share Tech Mono',monospace; font-size:9px; padding:3px 10px; letter-spacing:0.15em;">WHY UV LIGHT</div>
+    <p style="font-size:13px; color:var(--muted); line-height:1.9; margin-bottom:16px; margin-top:8px;">
+      現代のLEDは紫外線をほぼ出さないため、街灯・家庭照明に虫が集まらなくなった。<br>
+      これ自体が昆虫減少の一因でもある。UVランプはその逆を意図的に作り出す装置。
+    </p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px;">
+      <div style="background:var(--black); padding:16px; border:1px solid #0f2a0f;">
+        <div style="font-size:11px; color:var(--green); font-weight:700; margin-bottom:6px;">都市部ユーザーへの訴求</div>
+        <div style="font-size:12px; color:var(--muted); line-height:1.7;">「ベランダにUVランプを置いたら虫が来た」という体験自体がSNSコンテンツになる</div>
+      </div>
+      <div style="background:var(--black); padding:16px; border:1px solid #0f2a0f;">
+        <div style="font-size:11px; color:var(--green); font-weight:700; margin-bottom:6px;">データ品質の向上</div>
+        <div style="font-size:12px; color:var(--muted); line-height:1.7;">UVランプ使用記録は条件が統一されるため、フロントガラス記録より比較可能性が高い</div>
+      </div>
+      <div style="background:var(--black); padding:16px; border:1px solid #0f2a0f;">
+        <div style="font-size:11px; color:var(--green); font-weight:700; margin-bottom:6px;">ハードウェア資産化</div>
+        <div style="font-size:12px; color:var(--muted); line-height:1.7;">ソフト単体より「ハード＋ソフト＋データ」の三点セットの方が売却価値が格段に上がる</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ 07 EXIT ══ -->
+<section class="section">
+  <div class="section-label">07 · Exit Strategy</div>
+  <h2 class="section-title">データの<span>売り先</span></h2>
+
+  <table class="exit-table">
+    <thead>
+      <tr>
+        <th>買い手</th>
+        <th>用途</th>
+        <th>必要データ量</th>
+        <th>価格感</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong style="color:var(--text)">農薬・肥料メーカー</strong></td>
+        <td>地域別昆虫密度マップで製品開発・マーケティング</td>
+        <td>全国分布・5,000件〜</td>
+        <td class="highlight">年間数百万円</td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--text)">損保・再保険会社</strong></td>
+        <td>農業リスク評価モデルへの組み込み</td>
+        <td>季節・地域別データ</td>
+        <td class="highlight">年間数百万円</td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--text)">環境省・農水省</strong></td>
+        <td>生物多様性政策の基礎データ</td>
+        <td>継続的な全国データ</td>
+        <td class="highlight">補助金・委託事業</td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--text)">大学・研究機関</strong></td>
+        <td>論文データ・共同研究</td>
+        <td>品質重視・少量可</td>
+        <td class="highlight">共同研究費</td>
+      </tr>
+      <tr>
+        <td><strong style="color:var(--text)">環境系スタートアップ</strong></td>
+        <td>アプリごと買収・サービス拡張</td>
+        <td>MAU・継続率</td>
+        <td class="highlight">数百万〜数千万円</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="band">
+    <div class="band-text">
+      仕掛けるのは<span>最初の一手だけ。</span><br>
+      あとはデータが勝手に育ち、<br>
+      <span>売れる資産</span>になる。
+    </div>
+  </div>
+</section>
+
+<hr class="fancy">
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div class="footer-logo">BugWatch</div>
+  <div class="footer-note">Japan Insect Monitor · Project Proposal 2026</div>
+</footer>
+
+</body>
+</html>
